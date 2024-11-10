@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+type ThreadsContent {
+  images String[]
+  text   String
+}
+
+model sections {
+  id     Int     @id @map("_id")
+  image String? @map("image:")
+  name   String
+}
+
+model tags {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+}
+
+model threads {
+  id      String         @id @default(auto()) @map("_id") @db.ObjectId
+  content ThreadsContent
+  date    DateTime       @db.Date
+  id_     Int            @map("id")
+  section Int
+  tags    String[]
+  title   String
+}
