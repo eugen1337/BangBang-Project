@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import org.osmdroid.util.GeoPoint
 
 
 @Composable
@@ -31,7 +32,7 @@ fun RequestLocationPermission() {
 }
 
 @Composable
-fun GetCurrentLocation(onLocationReceived: (LatLng) -> Unit) {
+fun GetCurrentLocation(onLocationReceived: (GeoPoint) -> Unit) {
     val context = LocalContext.current
     val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
@@ -39,7 +40,7 @@ fun GetCurrentLocation(onLocationReceived: (LatLng) -> Unit) {
     // Запрос местоположения
     fusedLocationClient.lastLocation.addOnSuccessListener { location: android.location.Location? ->
         location?.let {
-            onLocationReceived(LatLng(it.latitude, it.longitude))
+            onLocationReceived(GeoPoint(it.latitude, it.longitude))
         }
     }
 }

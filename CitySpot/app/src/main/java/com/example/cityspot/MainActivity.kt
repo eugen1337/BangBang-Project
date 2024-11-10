@@ -4,28 +4,34 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -33,18 +39,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.cityspot.ui.theme.CitySpotTheme
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.map.MapObjectCollection
+import com.yandex.mapkit.map.PlacemarkMapObject
+import com.yandex.mapkit.mapview.MapView
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MapKitFactory.setApiKey("2f985c45-c8b6-4935-a4c5-61b19a08d77a")
+        MapKitFactory.initialize(this)
         setContent {
             CitySpotTheme { Main() }
         }
@@ -54,12 +61,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Main() {
     val navController = rememberNavController()
-    Column(Modifier.padding(8.dp)) {
+    RequestLocationPermission()
+    Column(
+        Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+    ) {
         NavHost(
             navController, startDestination = NavRoutes.Home.route, modifier = Modifier.weight(1f)
         ) {
             composable(NavRoutes.Home.route) { Home() }
-            composable(NavRoutes.MapView.route) { MapView() }
+            composable(NavRoutes.AddressScreen.route) { AddressScreen() }
+            composable(NavRoutes.MapScreen.route) { MapScreen() }
         }
         BottomNavigationBar(navController = navController)
     }
@@ -67,7 +80,7 @@ fun Main() {
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
-    NavigationBar {
+    NavigationBar(modifier = Modifier.fillMaxWidth()) {
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
 
@@ -92,11 +105,12 @@ fun BottomNavigationBar(navController: NavController) {
 object NavBarItems {
     val BarItems = listOf(
         BarItem(
-            title = "Главная", image = Icons.Filled.LocationOn, route = "home"
-        ),
-        BarItem(
-            title = "Карта", image = Icons.Filled.Face, route = "mapView"
-        ),
+            title = "Главная", image = Icons.Filled.Home, route = "home"
+        ), BarItem(
+            title = "Адрес", image = Icons.Filled.Search, route = "address"
+        ), BarItem(
+            title = "Карта", image = Icons.Filled.LocationOn, route = "map"
+        )
     )
 }
 
@@ -106,57 +120,83 @@ data class BarItem(
 
 @Composable
 fun Home() {
-    Text("Главная", fontSize = 30.sp)
-}
-
-@Composable
-fun MapView() {
-    var currentLocation by remember { mutableStateOf<LatLng?>(null) }
-    RequestLocationPermission()
-
-    GetCurrentLocation { location ->
-        currentLocation = location
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Text("Главная", fontSize = 30.sp)
     }
-    Log.d("LOCATION", currentLocation.toString())
-    val cameraPositionState = rememberCameraPositionState {
-        if (currentLocation != null) {
-            position = CameraPosition.fromLatLngZoom(currentLocation!!, 10f)
-        }
-    }
-    Text("MapView Page", fontSize = 30.sp)
-    GoogleMap(
+    Column(
         modifier = Modifier.fillMaxSize(),
-        cameraPositionState = cameraPositionState
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        currentLocation?.let {
-            Marker(
-                state = MarkerState(position = it),
-                title = "Ваше местоположение",
-                snippet = "Вы здесь"
-            )
-        }
-//        Button(modifier = Modifier
-//            .height(50.dp)
-//            .width(50.dp), onClick = {
-//            currentLocation?.let { location ->
-//                cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(location, 15f))
-//            }
-//        }) {
-//            Text("Перейти к моему местоположению")
-//        }
+        Text(
+            "\tВ данном приложении вы можете получить информацию о заинтересовавшем вас здании\n\nНайдите здание удобным для вас образом",
+            fontSize = 20.sp
+        )
+    }
+}
+
+@Composable
+fun AddressScreen() {
+    var text by remember { mutableStateOf("") }
+    var ll by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+
+    GetCurrentLocation { point ->
+        ll = point.longitude.toString() + "," + point.latitude.toString()
+    }
+
+    Text("Поиск по адресу", fontSize = 30.sp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+    ) {
+        TextField(
+            value = text,
+            onValueChange = {
+                text = it
+            },
+            label = { Text("Введите адрес") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Button(onClick = {
+            coroutineScope.launch {
+                try {
+                    val response = RetrofitInstance.yandex.getCoords(API_KEY, text, "json")
+                    Log.d("GEOCODE", response.response.featureMember[0].geoObject.name)
+                } catch (e: Exception) {
+                    e.message?.let { Log.d("GEOCODE", it) }
+                }
+            }
+        }) { Text("Найти") }
     }
 
 }
 
 @Composable
-fun About() {
-    Text("About Page", fontSize = 30.sp)
+fun MapScreen() {
+    YandexMap()
 }
+
+@Composable
+fun YandexMap() {
+    AndroidView(factory = { context ->
+        MapView(context).apply {
+            map.move(
+                com.yandex.mapkit.map.CameraPosition(
+                    Point(55.7558, 37.6173), 10f, 0f, 0f
+                ) // Координаты Москвы
+            )
+            val mapObjects: MapObjectCollection = map.mapObjects.addCollection()
+            val placemark: PlacemarkMapObject = mapObjects.addPlacemark(Point(55.7558, 37.6173))
+            //placemark.setIcon(BitmapFactory.decodeResource(resources, R.drawable.marker_icon)) // Замените на свой ресурс иконки
+        }
+    })
+}
+
 
 sealed class NavRoutes(val route: String) {
     data object Home : NavRoutes("home")
-    data object MapView : NavRoutes("mapView")
-    data object About : NavRoutes("about")
+    data object AddressScreen : NavRoutes("address")
+    data object MapScreen : NavRoutes("map")
 }
 
 

@@ -13,6 +13,9 @@ mapsCompose = "6.2.1"
 playServicesMaps = "19.0.0"
 playServicesLocation = "21.3.0"
 osmdroidAndroid = "6.1.20"
+mapsMobile = "4.8.3-beta-navikit-flutter"
+retrofit = "2.11.0"
+converterGson = "2.11.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +37,9 @@ maps-compose = { group = "com.google.maps.android", name = "maps-compose", versi
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroidAndroid" }
+maps-mobile = { group = "com.yandex.android", name = "maps.mobile", version.ref = "mapsMobile" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
