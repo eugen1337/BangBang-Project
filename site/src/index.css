@@ -1,0 +1,34 @@
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #121212;
+
+  display: flex;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  flex-grow: 1;
+}
+
+@font-face {
+  font-family: 'Gilroy-ExtraBold';
+  src: local('Gilroy-ExtraBold'), url(./fonts/Gilroy-ExtraBold.otf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Gilroy-Light';
+  src: local('Gilroy-Light'), url(./fonts/Gilroy-Light.otf) format('truetype');
+}
+
+
+@font-face {
+  font-family: 'AKONY';
+  src: local('AKONY'), url(./fonts/AKONY.otf) format('truetype');
+}
